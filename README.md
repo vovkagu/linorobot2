@@ -6,24 +6,93 @@ ROS 2 Distro | Branch | Build status
 # linorobot2
 ![linorobot2](docs/linorobot2.gif)
 
-linorobot2 is a ROS2 port of the [linorobot](https://github.com/linorobot/linorobot) package. If you're planning to build your own custom ROS2 robot (2WD, 4WD, Mecanum Drive) using accessible parts, then this package is for you. This repository contains launch files to easily integrate your DIY robot with Nav2 and a simulation pipeline to run and verify your experiments on a virtual robot in Gazebo. 
+# Linorobot2 Overview
 
-Once the robot's URDF has been configured in linorobot2_description package, users can easily switch between booting up the physical robot and spawning the virtual robot in Gazebo. 
+This README.md and its sub-pages can be viewed as web pages [here](https://paulbouchier.github.io/linorobot2)
+
+If you're planning to build your own custom ROS2 robot (2WD, 4WD, Mecanum Drive) using commonly-used parts and a microcontroller for low-level control, then the linorobot2 system may be a good fit for you. It provides these benefits:
+
+- Microcontroller firmware runs low-level high-frequency control loops doing speed and direction control on a physical robot. Firmware built with PlatformIO.
+- Micro-ros passing ROS messages between microcontroller firmware and ROS nodes including Nav2 ROS navigation software.
+- Extending ROS topic subscribers and publishers out to the microcontroller makes it easy to add custom robot hardware controlled by the microcontroller. No need to modify the communication channel for new messages. Standard process for defining custom messages makes it easy to extend.
+- Highly parameterized configuration files enable easy adaptation to a variety of different physical robots
+- Architected extension points in linorobot2_hardware ease addition of custom devices
+- ROS nodes and launch files adapt micro-ros-based firmware to Nav2 navigation nodes
+- Rviz visualization of both physical and simulated robots
+- Test ROS-level software in a Gazebo simulation
+
+Linorobot2 software and firmware are contained in two repositories:
+- linorobot2 (this repo): the ROS2 side of the software, including gazebo interfaces
+- [linorobot2_hardware](https://github.com/linorobot/linorobot2_hardware): the microcontroller side of the firmware, including micro-ros.
+
+This repository contains launch files to easily integrate your DIY robot with the Nav2 navigation package, and a simulation pipeline to run and verify your experiments on a virtual robot in Gazebo. 
+
+The architectural goals of linorobot2 and linorobot2_hardware are to
+enable ROS2 navigation, both on robot hardware and in gazebo simulation,
+for a variety of differential-drive, skid-steer, and meccanum robots,
+and to do this with a high degree of parameterization of robot hardware
+characteristics and sensors and motor drivers. This should result in
+reduced development effort for robot software and firmware. Robot hardware
+includes a microcontroller running low-level high-frequency tasks in
+firmware and communicating to ROS nodes on a robot computer and/or
+workstation using the micro-ros transport.  Micro-ros is central to the
+architecture, and enables microcontroller firmware to flexibly subscribe
+and publish to ROS topics on the robot computer or workstation, provide
+service servers, and generally be a part of the ROS node graph. The
+architecture includes extension points for users to add customizations
+for their robots in such a way that they don't conflict with ongoing
+maintenance and upgrades to the linorobot2 packages. This enables
+upgrading linorobot2 software and firmware, hopefully with minimal
+impact to the user's robot software and configurations in many cases.
+Proper use of extension points also enables users to give back upgrades
+to the core linorobot2 software and firmware without disrupting their
+customizations.
+
+
+Once the robot's URDF has been configured in the linorobot2_description package, users can easily switch between booting up the physical robot and spawning the virtual robot in Gazebo. The figure below shows the major subsystems and launch files for running on real hardware and in simulation.
 
 ![linorobot2_architecture](docs/linorobot2_launchfiles.png)
 
-Assuming you're using one of the tested sensors, linorobot2 automatically launches the necessary hardware drivers, with the topics being conveniently matched with the topics available in Gazebo. This allows users to define parameters for high level applications (ie. Nav2 SlamToolbox, AMCL) that are common to both virtual and physical robots.
+Assuming you're using supported sensors and motor drivers, linorobot2 automatically launches the necessary hardware drivers, with the topics being conveniently matched with the topics available in Gazebo. This allows users to define parameters for high level applications (ie. Nav2 SlamToolbox, AMCL) that are common to both virtual and physical robots.
 
-The image below summarizes the topics available after running **bringup.launch.py**.
+The figure below summarizes the topics available after launching a connection to a hardware robot by running **bringup.launch.py**. It also shows the functions assigned to the microcontroller for physical robot control.
 ![linorobot2_microcontroller](docs/microcontroller_architecture.png)
 
-An in-depth tutorial on how to build the robot is available in [linorobot2_hardware](https://github.com/linorobot/linorobot2_hardware).
+An in-depth tutorial on how to configure the linorobot2 packages to run a physical robot is available in [linorobot2_hardware](https://github.com/linorobot/linorobot2_hardware).
 
-## Installation 
-This package requires ros-jazzy. If you haven't installed ROS2 yet, you can use this [installer](https://github.com/linorobot/ros2me) script that has been tested to work on x86 and ARM based dev boards ie. Raspberry Pi4/Nvidia Jetson Series. 
+### Help and Support
+Issues can be filed in the usual way in the github repos for
+linorobot2 and linorobot2_hardware. In addition,
+anyone is welcome to join the [linorobot google group(https://groups.google.com/g/linorobot) and ask questions or discuss matters relevant to the project.
 
-### 1. Robot Computer - linorobot2 Package
-The easiest way to install this package on the robot computer is to run the bash script found in this package's root directory. It will install all the dependencies, set the ENV variables for the robot base and sensors, and create a linorobot2_ws (robot_computer_ws) on the robot computer's `$HOME` directory. If you're using a ZED camera with a Jetson Nano, you must create a custom Ubuntu 20.04 image for CUDA and the GPU driver to work. Here's a quick [guide](./ROBOT_INSTALLATION.md#1-creating-jetson-nano-image) on how to create a custom image for Jetson Nano.
+# Linorobot2 System Configurations
+
+This section describes the three system configurations in which
+linorobot software and firmware is supported and tested:
+1. Robot Computer configuration
+2. Robot Wifi configuration
+3. Simulation configuration
+
+Read about the [supported system configurations](doc/SupportedConfigurations.html)
+
+Of course, it is intended that users modify the software and system
+configs to meet the needs of their robot - for example, by adding
+microcontrollers or ROS nodes or firmware enhancements. However,
+deviations from the architecture of linorobot2 and linorobot2_hardware
+should be considered carefully.
+
+# Linorobot2 Installation 
+In addition to installing linorobot2 packages, you will most likely want to install the Nav2 meta-package as well,
+on the robot computer for the Robot Computer Config, or on the workstation
+for the Robot Wifi Config. The nav2 meta-package enables the robot to
+localize itself using depth-sensor scans and to
+generate a map using SLAM and navigate within the map.
+Follow the [nav2 installation documentation](https://docs.nav2.org/getting_started/index.html)
+
+## Robot Computer Software Installation
+The easiest way to install the linorobot2 packages on the robot computer is to run the bash script found in this package's root directory. It will install all the dependencies, set the ENV variables for the robot base and sensors, and create a linorobot2_ws (robot_computer_ws) on the robot computer's `$HOME` directory.
+
+**Note:** If you're using a ZED camera with a Jetson Nano, you must create a custom Ubuntu image for CUDA and the GPU driver to work. Here's a quick [guide](./ROBOT_INSTALLATION.md#1-creating-jetson-nano-image) on how to create a custom image for Jetson Nano.
 
     source /opt/ros/<ros_distro>/setup.bash
     cd /tmp
@@ -73,11 +142,11 @@ depth_sensor:
 
 Alternatively, follow this [guide](./ROBOT_INSTALLATION.md) to do the installation manually.
 
-### 2. Host Machine / Development Computer - Gazebo Simulation (Optional)
+## Host Machine / Development Computer - Gazebo Simulation (Optional)
 This step is only required if you plan to use Gazebo later. This comes in handy if you want to fine-tune parameters (ie. SLAM Toolbox, AMCL, Nav2) or test your applications on a virtual robot. 
 
 #### 2.1 Install linorobot2 Package
-Install linorobot2 package on the host machine:
+Install linorobot2 package, and gazebo if not already installed, on the host machine:
 
     cd <host_machine_ws>
     git clone -b $ROS_DISTRO https://github.com/linorobot/linorobot2 src/linorobot2
@@ -95,7 +164,17 @@ Set LINOROBOT2_BASE env variable to the type of robot base used. Available env v
 
 You can skip the next step (Host Machine - RVIZ Configurations) since this package already contains the same RVIZ configurations to visualize the robot. 
 
-### 3. Host Machine - RVIZ Configuration
+#### 2.3 Install gazebo
+If not already installed, you need to install gazebo
+
+    sudo apt install ros-${ROS_DISTRO}-joint-state-publisher ros-${ROS_DISTRO}-ros-gz-sim ros-${ROS_DISTRO}-ros-gz-bridge ros-${ROS_DISTRO}ros-${ROS_DISTRO}-robot-localization ros-${ROS_DISTRO}-xacro
+
+#### 2.4 Install nav2
+If not already installed, you need to install the nav2 metapackage, which runs the navigation algorithms.
+
+    sudo apt install ros-${ROS_DISTRO}-navigation2 ros-${ROS_DISTRO}-nav2-bringup
+
+## Host Machine - RVIZ Configuration
 Install [linorobot2_viz](https://github.com/linorobot/linorobot2_viz) package to visualize the robot remotely specifically when creating a map or initializing/sending goal poses to the robot. The package has been separated to minimize the installation required if you're not using the simulation tools on the host machine.
 
     cd <host_machine_ws>
