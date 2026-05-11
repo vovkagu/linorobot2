@@ -1,6 +1,17 @@
-log
-__pycache__
-*.pyc
-**/__pycache__/**
-**.pyc
-COLCON_IGNORE
+# ROS2 Build Artifacts
+build/
+install/
+log/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local environment / IDEs
+.venv/
+.env
+.vscode/
+
+# Git internals from nested repos (if any remained)
+*/.git
